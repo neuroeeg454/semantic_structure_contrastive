@@ -1,0 +1,225 @@
+experiment_name: "binary_retrieval"
+exp_dir: "results/experiments/binary_retrieval_threshold_125" 
+seed: 42
+use_wandb: true
+wandb_project: "eeg-text-alignment"
+experiment_group: "retrieval"
+tags: ["eeg", "text", "binary", "retrieval", "chinese"]
+debug_trace_logits: true
+task_type: "binary_retrieval"
+task_level: "word"
+modality: "reading"
+
+gpu_num: 3
+gpu_ids: [1,2,3]
+
+training_strategy: "end_to_end"  
+train_classifier_only: false
+use_binary_head: false  
+freeze_text_encoder: true
+binary_objective: "contrastive"
+
+num_negatives: 1
+pos_neg_ratio: 1.0  
+debug_overfit_n: 64
+
+classifier:
+  hidden_dim: 512
+  num_layers: 2
+  dropout: 0.1
+  activation: "relu"
+  use_batch_norm: true
+
+k_values: [1, 5, 10, 20, 50]
+compute_mrr: true
+compute_recall: true
+compute_auc: true  
+save_embeddings: false
+
+train_retrieval_only: false
+freeze_alignment: false
+alignment_lr: 5e-5
+classifier_lr: 5e-5
+
+analyze_false_positives: true
+analyze_false_negatives: true
+save_predictions: true
+
+aligned_results_dir: "aligned_results"
+eeg_data_dir: "chineseeeg2_raw_hdf5"
+eeg_base_path: "chineseeeg2_raw_hdf5" 
+dataset_size: "medium"
+
+advanced:
+  data_augmentation:
+    enabled: true
+    composer_mode: "random"  
+    methods:
+      - name: "gaussian_noise"
+        probability: 0.5
+        std: 0.05
+      - name: "time_shift"
+        probability: 0.5
+        max_shift: 20
+        mode: "circular"
+      - name: "channel_dropout"
+        probability: 0.3
+        dropout_rate: 0.1
+      - name: "amplitude_scaling"
+        probability: 0.5
+        scale_range: [0.8, 1.2]
+      - name: "smooth_time_mask"
+        probability: 0.3
+        mask_len_samples: 50
+        min_masks: 1
+        max_masks: 2
+
+train_subjects: ["f1","f2","m1","m2"]
+train_sessions: ["littleprince"]
+train_runs: ["11","12","13","14","15","16","17","18","19","110","111","112","113","114","21","22","23","24"]
+
+val_subjects: ["f1"]
+val_sessions: ["littleprince"]
+val_runs: ["25","26","27","28","29","210"]
+
+test_subjects: ["f1"]
+test_sessions: ["littleprince"]
+test_runs: ["211","212","213"]
+
+
+eeg_processing:
+  n_channels: 128
+  n_timepoints: 400
+  fixed_window_ms: 400
+  sampling_rate: 1000
+  normalize_eeg: true
+  cache_eeg: true
+
+eeg_encoder:
+  type: "braindecode"
+  model_type: "eegconformer" 
+  embedding_dim: 512
+  n_channels: 128
+  n_timepoints: 400
+  dropout: 0.3
+  sampling_rate: 1000  
+
+  model_params:
+    att_depth: 4        
+    att_heads: 8        
+    pool_time_stride: 2 
+
+  pretrained:
+    enabled: true
+    checkpoint_path: null
+    freeze_pretrained: false
+
+  initialization:
+    use_warmup: true
+    warmup_epochs: 5
+    init_method: "xavier"
+
+text_encoder:
+  text_encoder_type: "qwen"
+  text_encoder_name: "Qwen/Qwen3-Embedding-0.6B"
+  embedding_dim: 512
+  max_text_length: 32
+  pooling_strategy: "cls"
+  freeze_layers: 50
+
+model:
+  contrastive:
+    temperature: 0.07
+    use_symmetric_loss: true
+    
+  projection:
+    shared_dim: 256
+    hidden_dim: 512
+    dropout: 0.1
+    use_layer_norm: true
+    
+  binary_classification:
+    use_separate_head: true  
+    head_type: "linear"  # "linear", "mlp"
+    use_attention: false  
+
+  regularization:
+    weight_decay: 0.01
+    dropout_rate: 0.3
+    label_smoothing: 0.0  
+
+
+training:
+  batch_size: 48
+  epochs: 30
+  gradient_accumulation_steps: 2
+  
+  optimizer: "AdamW"
+  learning_rate: 5e-5
+  min_lr: 1e-8
+  weight_decay: 0.01
+  betas: [0.9, 0.999]
+
+  scheduler: "cosine"
+  warmup_epochs: 5
+  warmup_factor: 0.01
+  
+  grad_clip: 1.0
+  use_amp: false  
+  amp_dtype: "float16"
+ 
+  num_workers: 4
+  pin_memory: true
+  prefetch_factor: 2
+
+  save_interval: 5
+  use_early_stopping: false
+  early_stopping_patience: 15
+  early_stopping_min_delta: 0.00001
+  early_stopping_monitor: "binary_acc" 
+
+  log_interval: 10
+  log_gradient_interval: 100
+  log_embedding_interval: 500
+  eval_interval: 1
+  debug_overfit_n: 0  
+
+evaluation:
+  test_batch_size: 64
+  compute_all_metrics: true
+  save_predictions: true
+  save_embeddings: false
+  
+
+  binary_metrics:
+    compute_auc: true
+    compute_f1: true
+    compute_precision_recall: true
+    compute_confusion_matrix: true
+    threshold: 0.5  
+    
+  retrieval_metrics:
+    k_values: [1, 5, 10, 20, 50]
+    compute_mrr: true
+    compute_recall: true
+  
+  visualize_results: true
+  num_examples_to_show: 10
+  save_figures: true
+  
+  compute_statistics: true
+  confidence_intervals: true
+  n_bootstrap: 1000
+
+system:
+  log_level: "INFO"
+  log_file: "logs/binary_retrieval_training.log"
+  console_log: true
+
+  checkpoint_dir: "checkpoints"
+  max_checkpoints: 5
+  save_best_only: true
+
+  resume_from_checkpoint: null
+  resume_optimizer: true
+  resume_scheduler: true
