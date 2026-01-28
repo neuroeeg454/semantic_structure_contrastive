@@ -1,6 +1,6 @@
 # semantic_structure_contrastive
 In this work, we explore the alignment of EEG and text representations in a shared embedding space using a dual-tower contrastive learning framework. We generate word-aligned EEG and text embeddings for two Chinese EEG datasets and perform cross-modal retrieval, where EEG segments are mapped to their corresponding semantic representations (words or sentences) within a continuous neural embedding space. Under the semantic-aware evaluation framework, the model achieves more semantically appropriate neural-to-text retrieval.This outcome not only clarifies the role of evaluation protocols in assessing EEG-text alignment but also lays the foundation for future EEG-text semantic alignment in Chinese.
-![figure]()  
+![figure](https://github.com/neuroeeg454/semantic_structure_contrastive/blob/main/image/concept.pdf)  
 ## Environment
 ```
 conda create --name semantic_contrastive python=3.10.18
